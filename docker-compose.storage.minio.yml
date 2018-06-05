@@ -1,0 +1,24 @@
+version: '2'
+services:
+
+    #
+    # minio
+    #
+    minio:
+        image: mendersoftware/minio:RELEASE.2016-12-13T17-19-42Z
+        networks:
+            - mender
+        command: server /export
+
+    #
+    # storage backend proxy used in conjunction with minio, applies
+    # rate & connection limiting
+    #
+    storage-proxy:
+        image: mendersoftware/openresty:1.11.2.2-alpine
+        networks:
+            - mender
+        depends_on:
+            - minio
+        volumes:
+            - ./storage-proxy/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf

@@ -1,0 +1,180 @@
+version: '2'
+services:
+
+    #
+    # mender-deployments
+    #
+    mender-deployments:
+        image: mendersoftware/deployments:1.5.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-deployments
+
+    mender-mongo-deployments:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-deployments
+
+    #
+    # mender-gui
+    #
+    mender-gui:
+        image: mendersoftware/gui:1.5.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        environment:
+            - INTEGRATION_VERSION
+
+    #
+    # mender-api-gateway
+    #
+    mender-api-gateway:
+        image: mendersoftware/api-gateway:1.5.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        # critical - otherwise nginx may not detect
+        # these servers and exits with 'upstream server not found'
+        depends_on:
+            - mender-device-auth
+            - mender-device-adm
+            - mender-deployments
+            - mender-gui
+            - mender-useradm
+            - mender-inventory
+
+    #
+    # mender-device-auth
+    #
+    mender-device-auth:
+        image: mendersoftware/deviceauth:1.5.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-device-auth
+
+    mender-mongo-device-auth:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-device-auth
+
+    #
+    # mender-device-adm
+    #
+    mender-device-adm:
+        image: mendersoftware/deviceadm:1.4.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-device-adm
+
+    mender-mongo-device-adm:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-device-adm
+
+    #
+    # mender-inventory
+    #
+    mender-inventory:
+        image: mendersoftware/inventory:1.4.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-inventory
+
+    mender-mongo-inventory:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-inventory
+
+    #
+    # mender-useradm
+    #
+    mender-useradm:
+        image: mendersoftware/useradm:1.5.0b1
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-useradm
+
+    mender-mongo-useradm:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-useradm
+
+    mender-conductor:
+        image: mendersoftware/mender-conductor:1.0.0b1
+        depends_on:
+            - mender-elasticsearch
+            - mender-redis
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+
+    mender-elasticsearch:
+        image: mendersoftware/elasticsearch:2.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+
+    mender-redis:
+        image: redis:3.2.11-alpine
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+
+networks:
+    mender:

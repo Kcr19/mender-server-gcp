@@ -1,0 +1,49 @@
+version: '2'
+services:
+
+    mender-tenantadm:
+        image: mendersoftware/tenantadm:master
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-mongo-tenantadm
+
+    mender-mongo-tenantadm:
+        image: mongo:3.4
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            mender:
+                aliases:
+                    - mongo-tenantadm
+
+    mender-conductor:
+        image: mendersoftware/mender-conductor-enterprise:1.0.0b1
+
+    mender-org-welcome-email-preparer:
+        image: mendersoftware/org-welcome-email-preparer:master
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-conductor
+        environment:
+            CONDUCTOR: "http://mender-conductor:8080"
+
+    mender-email-sender:
+        image: mendersoftware/email-sender:master
+        extends:
+            file: common.yml
+            service: mender-base
+        networks:
+            - mender
+        depends_on:
+            - mender-conductor
+        environment:
+            CONDUCTOR: "http://mender-conductor:8080"
